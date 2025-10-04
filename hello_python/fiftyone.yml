@@ -1,0 +1,14 @@
+# fiftyone.yml
+name: "@madfish/hello_python"
+version: 0.0.2
+description: "Pure-Python Hello World plugin for FiftyOne"
+
+operators:
+  - "@madfish/hello_python/print_me"
+
+panels:
+  - "@madfish/hello_python.HelloPanel"
+
+# Optional author metadata
+author: "madfishOD"
+license: "MIT"
