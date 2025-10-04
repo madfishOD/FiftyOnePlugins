@@ -1,0 +1,7 @@
+{
+  "name": "hello_plugin",
+  "version": "0.0.1",
+  "description": "Simple Hello World plugin",
+  "operators": ["hello_plugin.print_me"],
+  "panels": ["hello_plugin.HelloPanel"]
+}
