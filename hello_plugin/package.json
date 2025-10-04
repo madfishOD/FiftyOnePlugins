@@ -1,6 +1,6 @@
 {
-    "name": "@voxel51/hello-world",
-    "version": "1.0.0",
+    "name": "@madfish/hello_plugin",
+    "version": "0.0.1",
     "main": "src/HelloWorldPlugin.tsx",
     "license": "MIT",
     "fiftyone": {
