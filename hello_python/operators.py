@@ -8,10 +8,11 @@ class PrintMe(foo.Operator):
     def config(self):
         return foo.OperatorConfig(
             name="@madfish/hello_python/print_me",
-            label="Say That's Me!",
+            label="Say That's Me!"
         )
 
     def execute(self, ctx):
+        print("That's Me!")
         return {"message": "That's Me!"}
 
     def resolve_output(self, ctx):

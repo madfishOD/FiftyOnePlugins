@@ -1,6 +1,6 @@
 name: "@madfish/hello_python"
-version: "0.0.5"
-description: "Simple Hello World panel and operator"
+version: "0.0.6"
+description: "Hello World plugin (React panel + Python operator)"
 author: "madfish"
 license: "MIT"
 

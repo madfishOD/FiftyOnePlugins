@@ -12,7 +12,6 @@ export default defineConfig({
       fileName: () => "index.umd.js",
     },
     rollupOptions: {
-      // 👇 mark all external runtime libs so they aren't bundled
       external: ["react", "react-dom", "@fiftyone/plugins"],
       output: {
         globals: {
