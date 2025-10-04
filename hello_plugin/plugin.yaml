@@ -1,0 +1,11 @@
+name: hello_plugin
+version: 0.0.1
+description: Simple Hello World plugin
+
+# Register operators
+operators:
+  - hello_plugin.print_me
+
+# Register panels
+panels:
+  - hello_plugin.HelloPanel
