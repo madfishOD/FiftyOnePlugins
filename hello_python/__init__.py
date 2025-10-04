@@ -1,8 +1,6 @@
 # __init__.py
 from .operators import PrintMe
-from .panel import HelloPanel
 
 def register(plugin):
-    """Registers the plugins in this module."""
+    """Registers backend components."""
     plugin.register(PrintMe)
-    plugin.register(HelloPanel)

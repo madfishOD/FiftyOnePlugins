@@ -1,14 +1,10 @@
-# fiftyone.yml
 name: "@madfish/hello_python"
-version: 0.0.2
-description: "Pure-Python Hello World plugin for FiftyOne"
+version: 0.0.5
+description: "Hybrid Hello World plugin (React panel + Python operator)"
+author: "madfishOD"
 
 operators:
   - "@madfish/hello_python/print_me"
 
 panels:
   - "@madfish/hello_python.HelloPanel"
-
-# Optional author metadata
-author: "madfishOD"
-license: "MIT"
