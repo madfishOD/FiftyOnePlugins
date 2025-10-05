@@ -1,6 +1,9 @@
+import fiftyone as fo
 import fiftyone.operators as foo
 import fiftyone.operators.types as types
 from tkinter import filedialog, Tk
+import os
+
 
 class MadImportSamples(foo.Operator):
     @property
@@ -8,40 +11,62 @@ class MadImportSamples(foo.Operator):
         return foo.OperatorConfig(
             name="mad_io",
             label="Import Samples",
-            dynamic=False,  # no dynamic UI since we skip inputs
+            dynamic=False,
         )
 
-    # No resolve_input — the operator runs immediately
-
     def execute(self, ctx):
-        folder_path = None
-
+        # Select folder
         try:
             root = Tk()
-            root.withdraw()                   # hide main window
-            root.attributes("-topmost", True)  # bring dialog to front
-            folder_path = filedialog.askdirectory(
-                title="Select a folder to import"
-            )
+            root.withdraw()
+            root.attributes("-topmost", True)
+            folder_path = filedialog.askdirectory(title="Select a folder with images")
             root.destroy()
         except Exception as e:
-            folder_path = f"[Error opening dialog: {e}]"
+            raise foo.OperatorError(f"Error opening dialog: {e}")
 
         if not folder_path:
-            folder_path = "[No folder selected]"
+            raise foo.OperatorError("No folder selected.")
 
-        # Return the selected folder as the output
-        return {"selected_path": folder_path}
+        # Gather image files recursively
+        valid_exts = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".gif", ".webp"}
+        image_paths = [
+            os.path.join(root_dir, f)
+            for root_dir, _, files in os.walk(folder_path)
+            for f in files
+            if os.path.splitext(f)[1].lower() in valid_exts
+        ]
+
+        if not image_paths:
+            return {"error": "No image files found in the selected folder"}
+
+        # Get dataset from context or create new one
+        dataset = ctx.dataset
+        if dataset is None:
+            raise foo.OperatorError("error": "No active dataset found!")
+
+        # Add samples
+        samples = [fo.Sample(filepath=path) for path in image_paths]
+        dataset.add_samples(samples)
+        dataset.persist()
+
+        # If there is a session, reload it
+        if ctx.session:
+            ctx.session.dataset = dataset
+            ctx.session.refresh()
+
+        return {
+            "selected_path": folder_path,
+            "imported_count": len(samples),
+            "dataset_name": dataset.name,
+        }
 
     def resolve_output(self, ctx):
         outputs = types.Object()
-        outputs.str(
-            "selected_path",
-            label="Selected Folder Path",
-            description="The folder you picked via the native file dialog",
-        )
-        header = "Folder Selection Result"
-        return types.Property(outputs, view=types.View(label=header))
+        outputs.str("selected_path", label="Selected Folder Path")
+        outputs.int("imported_count", label="Number of Images Imported")
+        outputs.str("dataset_name", label="Dataset Name")
+        return types.Property(outputs, view=types.View(label="Import Complete!"))
 
 
 def register(p):
