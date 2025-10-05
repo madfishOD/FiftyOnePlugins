@@ -4,6 +4,7 @@ from tkinter import filedialog, Tk
 import subprocess
 import sys
 import os
+import json
 
 
 class MadImportSamples(foo.Operator):
@@ -56,48 +57,71 @@ class MadExportSamples(foo.Operator):
         return foo.OperatorConfig(
             name="mad_io_export",
             label="Export Samples",
-            dynamic=False,
+            dynamic=True,  # now interactive
         )
-    
-    def execute(self, ctx):
-        """Called when the user runs the operator."""
-        dataset_name = ctx.dataset.name if ctx.dataset else None
-        if not dataset_name:
-            return {"error": "No dataset selected"}
 
-        # Let user pick export folder
+    def resolve_input(self, ctx):
+        """Display options before execution"""
+        inputs = types.Object()
+
+        # Export mode selection
+        export_mode = types.RadioGroup()
+        export_mode.add_choice("DATASET", label="Full dataset")
+        export_mode.add_choice("VIEW", label="Active view")
+        export_mode.add_choice("SELECTION", label="Selected samples")
+
+        inputs.enum(
+            "mode",
+            export_mode.values(),
+            required=True,
+            default="VIEW",
+            view=export_mode,
+        )
+
+        return types.Property(inputs, view=types.View(label="Export Options"))
+
+    def execute(self, ctx):
+        mode = ctx.params.get("mode", "VIEW")
+
+        dataset = ctx.dataset
+        if dataset is None:
+            raise foo.OperatorError("Please open or select a dataset first")
+
         root = Tk()
         root.withdraw()
-        export_dir = filedialog.askdirectory(title="Select Export Directory")
+        export_dir = filedialog.askdirectory(title="Select export directory")
         root.destroy()
 
         if not export_dir:
             return {"error": "Export cancelled"}
 
-        # Launch the export in a separate worker process
-        script_path = os.path.join(
-            os.path.dirname(__file__), "mad_export_worker.py"
-        )
+        script_path = os.path.join(os.path.dirname(__file__), "mad_export_worker.py")
 
+        # Determine which samples to export
+        sample_ids = []
+        if mode == "SELECTION" and ctx.selected:
+            sample_ids = ctx.selected
+        elif mode == "VIEW":
+            sample_ids = ctx.view.values("id")
+
+        # Write IDs to a temporary file (since command args have length limits)
+        tmp_ids_path = os.path.join(export_dir, "_export_ids.json")
+        with open(tmp_ids_path, "w") as f:
+            json.dump(sample_ids, f)
+
+        # Launch background worker process
         subprocess.Popen(
-            [
-                sys.executable,
-                script_path,
-                dataset_name,
-                export_dir,
-            ],
-            creationflags=subprocess.CREATE_NEW_CONSOLE
-            if os.name == "nt"
-            else 0,
+            [sys.executable, script_path, dataset.name, export_dir, mode, tmp_ids_path],
+            creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == "nt" else 0,
         )
 
-        return {"export_dir": export_dir}
+        return {"export_dir": export_dir, "mode": mode, "count": len(sample_ids)}
 
     def resolve_output(self, ctx):
         outputs = types.Object()
         outputs.str("export_dir", label="Export Directory")
-        header = "Mad Export Status"
-        return types.Property(outputs, view=types.View(label=header))
+        outputs.str("mode", label="Export Mode")
+        return types.Property(outputs, view=types.View(label="Export Status"))
 
 
 
