@@ -10,7 +10,7 @@ class MadImportSamples(foo.Operator):
     @property
     def config(self):
         return foo.OperatorConfig(
-            name="mad_io",
+            name="mad_io_import",
             label="Import Samples",
             dynamic=False,
         )
@@ -49,7 +49,58 @@ class MadImportSamples(foo.Operator):
         outputs.str("selected_path", label="Selected Folder Path")
         outputs.str("status", label="Status")
         return types.Property(outputs, view=types.View(label="Import started"))
+    
+class MadExportSamples(foo.Operator):
+    @property
+    def config(self):
+        return foo.OperatorConfig(
+            name="mad_io_export",
+            label="Export Samples",
+            dynamic=False,
+        )
+    
+    def execute(self, ctx):
+        """Called when the user runs the operator."""
+        dataset_name = ctx.dataset.name if ctx.dataset else None
+        if not dataset_name:
+            return {"error": "No dataset selected"}
+
+        # Let user pick export folder
+        root = Tk()
+        root.withdraw()
+        export_dir = filedialog.askdirectory(title="Select Export Directory")
+        root.destroy()
+
+        if not export_dir:
+            return {"error": "Export cancelled"}
+
+        # Launch the export in a separate worker process
+        script_path = os.path.join(
+            os.path.dirname(__file__), "mad_export_worker.py"
+        )
+
+        subprocess.Popen(
+            [
+                sys.executable,
+                script_path,
+                dataset_name,
+                export_dir,
+            ],
+            creationflags=subprocess.CREATE_NEW_CONSOLE
+            if os.name == "nt"
+            else 0,
+        )
+
+        return {"export_dir": export_dir}
+
+    def resolve_output(self, ctx):
+        outputs = types.Object()
+        outputs.str("export_dir", label="Export Directory")
+        header = "Mad Export Status"
+        return types.Property(outputs, view=types.View(label=header))
+
 
 
 def register(p):
     p.register(MadImportSamples)
+    p.register(MadExportSamples)

@@ -4,6 +4,7 @@ author: madfishOD
 fiftyone:
   version: ">=0.22"
 operators:
-  - mad_io
+  - mad_io_import
+  - mad_io_export
 # panels:
 #   - mad_test_panel
