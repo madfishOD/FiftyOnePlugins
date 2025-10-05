@@ -61,10 +61,9 @@ class MadExportSamples(foo.Operator):
         )
 
     def resolve_input(self, ctx):
-        """Display options before execution"""
         inputs = types.Object()
 
-        # Export mode selection
+        # --- Export scope ---
         export_mode = types.RadioGroup()
         export_mode.add_choice("DATASET", label="Full dataset")
         export_mode.add_choice("VIEW", label="Active view")
@@ -78,10 +77,29 @@ class MadExportSamples(foo.Operator):
             view=export_mode,
         )
 
+        # --- Field selection ---
+        field_names = list(ctx.dataset.get_field_schema().keys())
+        # exclude technical fields
+        field_names = [f for f in field_names if f not in ("id", "filepath", "metadata")]
+
+        inputs.list(
+            "fields",
+            types.String(),
+            required=False,
+            default=["caption"] if "caption" in field_names else [],
+            view=types.View(
+                label="Select fields to export",
+                description="Choose which sample fields to export alongside images",
+                values=field_names,
+                multiple=True,
+            ),
+        )
+
         return types.Property(inputs, view=types.View(label="Export Options"))
 
     def execute(self, ctx):
         mode = ctx.params.get("mode", "VIEW")
+        fields = ctx.params.get("fields", [])
 
         dataset = ctx.dataset
         if dataset is None:
@@ -97,25 +115,26 @@ class MadExportSamples(foo.Operator):
 
         script_path = os.path.join(os.path.dirname(__file__), "mad_export_worker.py")
 
-        # Determine which samples to export
         sample_ids = []
         if mode == "SELECTION" and ctx.selected:
             sample_ids = ctx.selected
         elif mode == "VIEW":
             sample_ids = ctx.view.values("id")
 
-        # Write IDs to a temporary file (since command args have length limits)
         tmp_ids_path = os.path.join(export_dir, "_export_ids.json")
         with open(tmp_ids_path, "w") as f:
             json.dump(sample_ids, f)
 
-        # Launch background worker process
+        tmp_fields_path = os.path.join(export_dir, "_export_fields.json")
+        with open(tmp_fields_path, "w") as f:
+            json.dump(fields, f)
+
         subprocess.Popen(
-            [sys.executable, script_path, dataset.name, export_dir, mode, tmp_ids_path],
+            [sys.executable, script_path, dataset.name, export_dir, mode, tmp_ids_path, tmp_fields_path],
             creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == "nt" else 0,
         )
 
-        return {"export_dir": export_dir, "mode": mode, "count": len(sample_ids)}
+        return {"export_dir": export_dir, "mode": mode, "fields": fields}
 
     def resolve_output(self, ctx):
         outputs = types.Object()
