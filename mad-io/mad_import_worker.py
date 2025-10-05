@@ -25,9 +25,8 @@ def import_images(dataset_name, folder_path):
     dataset.save()
     print(f"✅ Done! Imported {len(samples)} images into dataset '{dataset_name}'")
 
-    # Pause to keep console open for inspection
-    input("\nPress Enter to exit...")
-
+    # Uncomment to Pause to keep console open for inspection
+    # input("\nPress Enter to exit...") 
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
