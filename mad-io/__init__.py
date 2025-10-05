@@ -1,8 +1,6 @@
 import fiftyone.operators as foo
 import fiftyone.operators.types as types
 from tkinter import filedialog, Tk
-import platform
-
 
 class MadImportSamples(foo.Operator):
     @property
@@ -18,19 +16,16 @@ class MadImportSamples(foo.Operator):
     def execute(self, ctx):
         folder_path = None
 
-        if platform.system() == "Windows":
-            try:
-                root = Tk()
-                root.withdraw()                 # hide main Tk window
-                root.attributes("-topmost", True)  # bring dialog to front
-                folder_path = filedialog.askdirectory(
-                    title="Select a folder to import"
-                )
-                root.destroy()
-            except Exception as e:
-                folder_path = f"[Error: {e}]"
-        else:
-            folder_path = "[Folder selection supported only on Windows for now]"
+        try:
+            root = Tk()
+            root.withdraw()                   # hide main window
+            root.attributes("-topmost", True)  # bring dialog to front
+            folder_path = filedialog.askdirectory(
+                title="Select a folder to import"
+            )
+            root.destroy()
+        except Exception as e:
+            folder_path = f"[Error opening dialog: {e}]"
 
         if not folder_path:
             folder_path = "[No folder selected]"
