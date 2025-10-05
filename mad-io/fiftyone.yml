@@ -1,0 +1,9 @@
+name: "@madfish/mad-io"
+type: plugin
+author: madfishOD
+fiftyone:
+  version: ">=0.22"
+operators:
+  - mad_io
+# panels:
+#   - mad_test_panel
