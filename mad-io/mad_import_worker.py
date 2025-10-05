@@ -10,6 +10,19 @@ def make_sample_id(filepath: str) -> str:
     return hashlib.sha1(abs_path.encode("utf-8")).hexdigest()
 
 
+def read_caption_for_image(image_path: str) -> str | None:
+    """If a .txt file with same basename exists, return its content."""
+    txt_path = os.path.splitext(image_path)[0] + ".txt"
+    if os.path.exists(txt_path):
+        try:
+            with open(txt_path, "r", encoding="utf-8") as f:
+                text = f.read().strip()
+            return text if text else None
+        except Exception as e:
+            print(f"⚠️ Could not read caption file for {image_path}: {e}")
+    return None
+
+
 def import_images(dataset_name, folder_path):
     dataset = fo.load_dataset(dataset_name)
 
@@ -28,22 +41,33 @@ def import_images(dataset_name, folder_path):
 
     print(f"🔍 Scanning {len(image_paths)} image files...")
 
-    # Build a quick lookup of existing samples by filepath
+    # Lookup of existing samples by filepath
     existing = {s.filepath: s.id for s in dataset.select_fields("filepath")}
 
     new_samples = []
     updated = 0
+    captioned = 0
 
     for path in image_paths:
         sample_id = make_sample_id(path)
+        caption = read_caption_for_image(path)
+
         if path in existing:
-            # Update existing sample (replace)
+            # Update existing sample
             sample = dataset[existing[path]]
-            sample.filepath = path  # redundant but explicit
+            if caption:
+                sample["caption"] = caption
+                captioned += 1
+            sample.filepath = path  # explicit
             sample.save()
             updated += 1
         else:
-            new_samples.append(fo.Sample(filepath=path, id=sample_id))
+            # Create new sample
+            sample = fo.Sample(filepath=path, id=sample_id)
+            if caption:
+                sample["caption"] = caption
+                captioned += 1
+            new_samples.append(sample)
 
     if new_samples:
         print(f"➕ Adding {len(new_samples)} new samples...")
@@ -55,8 +79,8 @@ def import_images(dataset_name, folder_path):
     dataset.save()
 
     print(
-        f"✅ Import complete: {len(new_samples)} added, {updated} updated "
-        f"in dataset '{dataset_name}'."
+        f"✅ Import complete: {len(new_samples)} added, {updated} updated, "
+        f"{captioned} with captions in dataset '{dataset_name}'."
     )
 
     input("\nPress Enter to exit...")
