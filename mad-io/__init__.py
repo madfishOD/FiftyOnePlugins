@@ -26,7 +26,7 @@ class MadImportSamples(foo.Operator):
             raise foo.OperatorError(f"Error opening dialog: {e}")
 
         if not folder_path:
-            raise foo.OperatorError("No folder selected.")
+            return {"error": "No folder selected"}
 
         # Gather image files recursively
         valid_exts = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".gif", ".webp"}
@@ -43,7 +43,7 @@ class MadImportSamples(foo.Operator):
         # Get dataset from context or create new one
         dataset = ctx.dataset
         if dataset is None:
-            raise foo.OperatorError("error": "No active dataset found!")
+            return {"error": "No active dataset found!"}
 
         # Add samples
         samples = [fo.Sample(filepath=path) for path in image_paths]
