@@ -16,18 +16,23 @@ def import_images(dataset_name, folder_path):
 
     if not image_paths:
         print(f"No images found in {folder_path}")
+        input("\nPress Enter to exit...")
         return
 
-    print(f"Importing {len(image_paths)} images into '{dataset_name}' ...")
+    print(f"🔄 Importing {len(image_paths)} images into '{dataset_name}' ...")
     samples = [fo.Sample(filepath=p) for p in image_paths]
     dataset.add_samples(samples)
-    dataset.persist()
-    print(f"Done! Imported {len(samples)} images into dataset '{dataset_name}'")
+    dataset.save()
+    print(f"✅ Done! Imported {len(samples)} images into dataset '{dataset_name}'")
+
+    # Pause to keep console open for inspection
+    input("\nPress Enter to exit...")
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("Usage: python mad_import_worker.py <dataset_name> <folder_path>")
+        input("\nPress Enter to exit...")
         sys.exit(1)
 
     dataset_name = sys.argv[1]
